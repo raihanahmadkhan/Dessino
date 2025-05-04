@@ -78,7 +78,7 @@ const ModernHeader: React.FC<HeaderProps> = ({
           </div>
           
           <div className="flex items-center space-x-2">
-            <div className="hidden md:flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
 
               
               <button 

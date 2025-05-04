@@ -562,19 +562,141 @@ const ModernDrawingApp: React.FC<DrawingAppProps> = ({ onBack }) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const x = touch.clientX - rect.left;
                 const y = touch.clientY - rect.top;
-                handleMouseDown({ nativeEvent: { offsetX: x, offsetY: y } } as any);
+                
+                // Start drawing
+                setIsDrawing(true);
+                setStartPoint({ x, y });
+                setLastPoint({ x, y });
+                
+                // Get temp canvas context
+                const tempCanvas = tempCanvasRef.current;
+                if (!tempCanvas) return;
+                
+                const tempCtx = tempCanvas.getContext('2d');
+                if (!tempCtx) return;
+                
+                // Clear the temp canvas
+                tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                
+                // Set drawing styles
+                tempCtx.lineCap = 'round';
+                tempCtx.lineJoin = 'round';
+                
+                // Handle eraser tool
+                if (currentTool === 'eraser') {
+                  // Get main canvas
+                  const mainCanvas = mainCanvasRef.current;
+                  if (!mainCanvas) return;
+                  
+                  const mainCtx = mainCanvas.getContext('2d');
+                  if (!mainCtx) return;
+                  
+                  // Use destination-out for eraser
+                  mainCtx.save();
+                  mainCtx.globalCompositeOperation = 'destination-out';
+                  mainCtx.beginPath();
+                  mainCtx.arc(x, y, lineWidth, 0, Math.PI * 2);
+                  mainCtx.fill();
+                  mainCtx.restore();
+                } else if (currentTool === 'pencil') {
+                  // Set drawing styles for pencil
+                  tempCtx.strokeStyle = strokeStyle;
+                  tempCtx.lineWidth = lineWidth;
+                  tempCtx.globalAlpha = opacity / 100;
+                  
+                  // Start drawing
+                  tempCtx.beginPath();
+                  tempCtx.moveTo(x, y);
+                  tempCtx.lineTo(x, y);
+                  tempCtx.stroke();
+                }
               }}
               onTouchMove={(e) => {
+                if (!isDrawing) return;
                 e.preventDefault();
+                
                 const touch = e.touches[0];
                 const rect = e.currentTarget.getBoundingClientRect();
                 const x = touch.clientX - rect.left;
                 const y = touch.clientY - rect.top;
-                handleMouseMove({ nativeEvent: { offsetX: x, offsetY: y } } as any);
+                
+                // Get current point
+                const currentPoint = { x, y };
+                
+                // Get temp canvas context
+                const tempCanvas = tempCanvasRef.current;
+                if (!tempCanvas) return;
+                
+                const tempCtx = tempCanvas.getContext('2d');
+                if (!tempCtx) return;
+                
+                // Handle eraser tool
+                if (currentTool === 'eraser') {
+                  // Get main canvas
+                  const mainCanvas = mainCanvasRef.current;
+                  if (!mainCanvas) return;
+                  
+                  const mainCtx = mainCanvas.getContext('2d');
+                  if (!mainCtx) return;
+                  
+                  // Use destination-out for eraser
+                  mainCtx.save();
+                  mainCtx.globalCompositeOperation = 'destination-out';
+                  mainCtx.beginPath();
+                  mainCtx.arc(x, y, lineWidth, 0, Math.PI * 2);
+                  mainCtx.fill();
+                  mainCtx.restore();
+                } else if (currentTool === 'pencil') {
+                  // Set drawing styles for pencil
+                  tempCtx.strokeStyle = strokeStyle;
+                  tempCtx.lineWidth = lineWidth;
+                  tempCtx.globalAlpha = opacity / 100;
+                  
+                  // Continue drawing
+                  tempCtx.beginPath();
+                  if (lastPoint) {
+                    tempCtx.moveTo(lastPoint.x, lastPoint.y);
+                    tempCtx.lineTo(currentPoint.x, currentPoint.y);
+                    tempCtx.stroke();
+                  }
+                }
+                
+                // Update last point
+                setLastPoint(currentPoint);
               }}
               onTouchEnd={(e) => {
                 e.preventDefault();
-                handleMouseUp();
+                if (!isDrawing) return;
+                
+                // Get main canvas
+                const mainCanvas = mainCanvasRef.current;
+                if (!mainCanvas) return;
+                
+                const mainCtx = mainCanvas.getContext('2d');
+                if (!mainCtx) return;
+                
+                // Get temp canvas
+                const tempCanvas = tempCanvasRef.current;
+                if (!tempCanvas) return;
+                
+                // Draw temp canvas to main canvas
+                if (currentTool !== 'eraser') {
+                  mainCtx.drawImage(tempCanvas, 0, 0);
+                  
+                  // Clear temp canvas
+                  const tempCtx = tempCanvas.getContext('2d');
+                  if (tempCtx) {
+                    tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                  }
+                }
+                
+                // Save to history
+                saveToHistory();
+                
+                // Reset drawing state
+                setIsDrawing(false);
+                setStartPoint(null);
+                setLastPoint(null);
               }}
               style={{ 
                 cursor: currentTool === 'eraser' ? 'cell' : 'default'
