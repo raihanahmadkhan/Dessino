@@ -20,8 +20,34 @@ const ModernDrawingApp: React.FC<DrawingAppProps> = ({ onBack }) => {
   const DEFAULT_LINE_WIDTH = 5;
   const MAX_HISTORY_LENGTH = 50;
   
-  // Canvas size
-  const [canvasSize] = useState({ width: 800, height: 600 });
+  // Canvas size with responsive adjustments
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  
+  // Handle window resize for responsive canvas
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        // Adjust canvas size for mobile devices
+        const mobileWidth = Math.min(window.innerWidth - 80, 600);
+        const mobileHeight = Math.min(window.innerHeight - 200, 450);
+        setCanvasSize({ width: mobileWidth, height: mobileHeight });
+      } else {
+        // Default size for desktop
+        setCanvasSize({ width: 800, height: 600 });
+      }
+    };
+    
+    // Set initial size
+    handleResize();
+    
+    // Add resize listener
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
   
   // Canvas references
   const containerRef = useRef<HTMLDivElement>(null);
@@ -56,14 +82,14 @@ const ModernDrawingApp: React.FC<DrawingAppProps> = ({ onBack }) => {
   useEffect(() => {
     if (mainCanvasRef.current) {
       // Set canvas dimensions
-      mainCanvasRef.current.width = 800;
-      mainCanvasRef.current.height = 600;
+      mainCanvasRef.current.width = canvasSize.width;
+      mainCanvasRef.current.height = canvasSize.height;
       
       // Fill with white background
       const ctx = mainCanvasRef.current.getContext('2d');
       if (ctx) {
         ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, 800, 600);
+        ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
       }
       
       // Save initial state to history
@@ -71,10 +97,10 @@ const ModernDrawingApp: React.FC<DrawingAppProps> = ({ onBack }) => {
     }
     
     if (tempCanvasRef.current) {
-      tempCanvasRef.current.width = 800;
-      tempCanvasRef.current.height = 600;
+      tempCanvasRef.current.width = canvasSize.width;
+      tempCanvasRef.current.height = canvasSize.height;
     }
-  }, []);
+  }, [canvasSize]);
   
   // Save current canvas state to history
   const saveToHistory = useCallback((): void => {
@@ -500,7 +526,7 @@ const ModernDrawingApp: React.FC<DrawingAppProps> = ({ onBack }) => {
         
         {/* Canvas Area */}
         <div 
-          className="flex-1 relative overflow-hidden flex items-center justify-center"
+          className="flex-1 relative overflow-auto flex items-center justify-center p-2 md:p-4"
           style={{ backgroundColor: showGrid ? 'var(--background)' : 'var(--surface)' }}
         >
           <div 
@@ -510,15 +536,15 @@ const ModernDrawingApp: React.FC<DrawingAppProps> = ({ onBack }) => {
           >
             <canvas
               ref={mainCanvasRef}
-              width="800"
-              height="600"
+              width={canvasSize.width}
+              height={canvasSize.height}
               className="absolute top-0 left-0 border border-border shadow-md"
               style={{ backgroundColor: 'white' }}
             />
             <canvas
               ref={tempCanvasRef}
-              width="800"
-              height="600"
+              width={canvasSize.width}
+              height={canvasSize.height}
               className="absolute top-0 left-0 pointer-events-none"
               style={{ backgroundColor: 'transparent' }}
             />
@@ -529,6 +555,27 @@ const ModernDrawingApp: React.FC<DrawingAppProps> = ({ onBack }) => {
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseLeave}
               onMouseEnter={handleMouseEnter}
+              onTouchStart={(e) => {
+                // Prevent scrolling when drawing
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                handleMouseDown({ nativeEvent: { offsetX: x, offsetY: y } } as any);
+              }}
+              onTouchMove={(e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                handleMouseMove({ nativeEvent: { offsetX: x, offsetY: y } } as any);
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                handleMouseUp();
+              }}
               style={{ 
                 cursor: currentTool === 'eraser' ? 'cell' : 'default'
               }}
@@ -572,12 +619,12 @@ const ModernDrawingApp: React.FC<DrawingAppProps> = ({ onBack }) => {
       </div>
       
       {/* Status Bar */}
-      <div className="bg-surface border-t border-border py-1 px-4 text-xs flex justify-between items-center relative">
+      <div className="bg-surface border-t border-border py-1 px-4 text-xs flex flex-wrap justify-between items-center relative">
         <div className="font-medium">Canvas: {canvasSize.width} × {canvasSize.height}px</div>
         <div className="font-medium">Tool: {currentTool.charAt(0).toUpperCase() + currentTool.slice(1)}</div>
         
         {/* Hint Box */}
-        <div className="hint-box absolute bottom-10 right-0 bg-primary/10 border border-primary/30 rounded-lg p-3 shadow-md max-w-xs">
+        <div className="hint-box absolute bottom-10 right-0 md:right-0 bg-primary/10 border border-primary/30 rounded-lg p-3 shadow-md max-w-[calc(100vw-32px)] md:max-w-xs">
           <div className="flex items-start gap-2">
             <div className="text-primary mt-0.5">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

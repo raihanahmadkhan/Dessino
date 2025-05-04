@@ -126,8 +126,14 @@ body {
 
 /* Custom utility classes */
 .app-sidebar {
-  width: 64px;
+  width: 48px;
   transition: width 0.3s ease;
+}
+
+@media (min-width: 768px) {
+  .app-sidebar {
+    width: 64px;
+  }
 }
 
 .app-sidebar.expanded {
@@ -178,6 +184,15 @@ body {
   color: var(--text-secondary);
   background: var(--surface);
   border: 1px solid var(--border);
+}
+
+/* Mobile-specific tool button sizing */
+@media (max-width: 767px) {
+  .tool-btn {
+    padding: 0.4rem;
+    min-height: 36px;
+    min-width: 36px;
+  }
 }
 
 .tool-btn:hover {

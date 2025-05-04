@@ -37,7 +37,7 @@ const ModernToolSettings: React.FC<ToolSettingsProps> = ({
     <AnimatePresence>
       {showToolSettings && (
         <motion.div
-          className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-surface rounded-lg shadow-lg border border-border z-30 w-80"
+          className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-surface rounded-lg shadow-lg border border-border z-30 w-[90%] max-w-xs md:max-w-sm"
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}

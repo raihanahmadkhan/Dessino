@@ -19,7 +19,7 @@ const ModernSidebar: React.FC<SidebarProps> = ({
   showLayersPanel
 }) => {
   return (
-    <div className="app-sidebar bg-surface border-r border-border shadow-md z-10 flex flex-col">
+    <div className="app-sidebar bg-surface border-r border-border shadow-md z-10 flex flex-col h-full">
       <div className="flex flex-col space-y-2 p-2 overflow-y-auto">
         {/* Drawing Tools Section */}
         <div className="flex flex-col space-y-1">
